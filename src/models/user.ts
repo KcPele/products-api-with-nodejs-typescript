@@ -1,10 +1,11 @@
 
-require('dotenv').config();
+import * as dotenv from 'dotenv'
+dotenv.config();
 import { Model, Schema, HydratedDocument, model } from 'mongoose';
 import bcrypt from "bcrypt"
 import jwt from 'jsonwebtoken';
 
-const privateKey = "change"
+const privateKey = process.env.PRIVATE_KEY
 
 export interface IUser {
   email: string;
@@ -31,9 +32,10 @@ schema.static('createNewUser', async function createNewUser(email: string, passw
     const hashPassword = await bcrypt.hash(password, salt)
     try {
       
-      const user  = await User.create({ email, password: hashPassword });
-      const token = jwt.sign({id: user._id}, "privateKey", {expiresIn:  (60 * 60) * 48})
-      return  {...user, token }
+      const user  = await User.create({ email, password: hashPassword })
+    
+      const token = jwt.sign({_id: user._id}, privateKey as string, {expiresIn:  (60 * 60) * 48})
+      return  {_id: user._id, email: user.email, token }
     } catch (error) {
       return {error: "email already taken"}
     }
@@ -49,9 +51,8 @@ schema.static('loginUser', async function loginUser(email: string, password: str
     if(!comparedPass){
       return {error: "wrong credentials, please try again"}
     } else {
-      
-      const token = jwt.sign({id: user._id}, privateKey, {expiresIn:  (60 * 60) * 48})
-      return  {...user, token }
+      const token = jwt.sign({_id: user._id}, privateKey as string, {expiresIn:  (60 * 60) * 48})
+      return  {_id: user._id, email: user.email,  token }
     }
     
   }
